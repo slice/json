@@ -79,7 +79,7 @@ async function consume() {
   if (sourceFile == null) {
     text = await stdin();
   } else {
-    text = await readFile(sourceFile);
+    text = await readFile(sourceFile, 'utf8');
   }
 
   if (text.trim() === '') {
