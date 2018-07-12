@@ -82,6 +82,10 @@ async function consume() {
     text = await readFile(sourceFile);
   }
 
+  if (text.trim() === '') {
+    throw new Error('stdin is empty or only consists of whitespace');
+  }
+
   const parsed = JSON.parse(text);
   const result = access(parsed, accessor);
 
