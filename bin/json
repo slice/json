@@ -39,11 +39,19 @@ if (process.stdin.isTTY && sourceFile == null) {
   usage();
 }
 
+function canResolve(thing, component) {
+  if (Array.isArray(thing)) {
+    return component < thing.length;
+  }
+
+  return Object.hasOwnProperty.call(thing, component);
+}
+
 function access(object, descriptor) {
   const components = descriptor.split('.');
   let current = object;
   for (const component of components) {
-    if (!Object.hasOwnProperty.call(component, current)) {
+    if (!canResolve(current, component)) {
       console.error(`error: hit a snag on \`${component}\``);
       console.error('where i was:');
       inspect(current, 'error');
