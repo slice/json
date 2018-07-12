@@ -4,7 +4,7 @@ process.on('unhandledRejection', (err) => {
   throw err;
 });
 
-const { readFile: _readFile } = require('fs');
+const { readFile: _readFile, existsSync } = require('fs');
 const { promisify, inspect: _inspect } = require('util');
 
 const readFile = promisify(_readFile);
@@ -20,19 +20,25 @@ function inspect(thing, call = 'log') {
 }
 
 function usage() {
-  console.log('usage: ... | json object.subobject.array.0');
+  console.log('usage: [...] | json [object.subobject.array.0] [file]');
   console.log('  output will be colored (if stdout is a tty) and wrapped to');
   console.log('  80 characters.');
   process.exit(1);
 }
 
-if (process.argv.length < 3) {
-  // we need an accessor at least
-  usage();
-}
+let accessor = process.argv.length > 2
+  ? process.argv[2].replace(/^\./, '')
+  : null;
+let sourceFile = process.argv.length > 3
+  ? process.argv[3]
+  : null;
 
-const accessor = process.argv[2].replace(/^\./, '');
-const sourceFile = process.argv.length < 4 ? null : process.argv[3];
+if (existsSync(accessor) && sourceFile == null) {
+  // if the accessor turns out to point to a file and there's no source arg,
+  // then the accessor was omitted.
+  sourceFile = accessor;
+  accessor = null;
+}
 
 if (process.stdin.isTTY && sourceFile == null) {
   // stdin is a tty (not being piped) and no file, bail
@@ -87,7 +93,7 @@ async function consume() {
   }
 
   const parsed = JSON.parse(text);
-  const result = access(parsed, accessor);
+  const result = accessor ? access(parsed, accessor) : parsed;
 
   inspect(result);
 }
