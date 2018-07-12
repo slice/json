@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+process.on('unhandledRejection', (err) => {
+  throw err;
+});
+
 const { readFile: _readFile } = require('fs');
 const { promisify, inspect: _inspect } = require('util');
 
@@ -76,6 +80,4 @@ async function consume() {
   inspect(result);
 }
 
-consume().catch((error) => {
-  throw error;
-});
+consume();
