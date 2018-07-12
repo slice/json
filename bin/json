@@ -26,18 +26,17 @@ function usage() {
   process.exit(1);
 }
 
-let accessor = process.argv.length > 2
-  ? process.argv[2].replace(/^\./, '')
+let sourceFile = process.argv.length > 2
+  ? process.argv[2]
   : null;
-let sourceFile = process.argv.length > 3
-  ? process.argv[3]
+let accessor = process.argv.length > 3
+  ? process.argv[3].replace(/^\./, '')
   : null;
 
-if (existsSync(accessor) && sourceFile == null) {
-  // if the accessor turns out to point to a file and there's no source arg,
-  // then the accessor was omitted.
-  sourceFile = accessor;
-  accessor = null;
+if (!existsSync(sourceFile) && accessor == null) {
+  // assume that sourceFile is the accessor, and sourceFile was omitted.
+  accessor = sourceFile;
+  sourceFile = null;
 }
 
 if (process.stdin.isTTY && sourceFile == null) {
