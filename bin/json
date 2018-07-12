@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+
+const { readFile: _readFile } = require('fs');
+const { promisify, inspect: _inspect } = require('util');
+
+const readFile = promisify(_readFile);
+
+function inspect(thing, call = 'log') {
+  console[call](_inspect(thing, {
+    depth: Infinity,
+    colors: process.stdout.isTTY,
+    maxArrayLength: Infinity,
+    breakLength: 80,
+    compact: false,
+  }));
+}
+
+function usage() {
+  console.log('usage: ... | json object.subobject.array.0');
+  console.log('  output will be colored (if stdout is a tty) and wrapped to');
+  console.log('  80 characters.');
+  process.exit(1);
+}
+
+if (process.argv.length < 3) {
+  // we need an accessor at least
+  usage();
+}
+
+const accessor = process.argv[2];
+const sourceFile = process.argv.length < 4 ? null : process.argv[3];
+
+if (process.stdin.isTTY && sourceFile == null) {
+  // stdin is a tty (not being piped) and no file, bail
+  usage();
+}
+
+function access(object, descriptor) {
+  const components = descriptor.split('.');
+  let current = object;
+  for (const component of components) {
+    if (!Object.hasOwnProperty.call(component, current)) {
+      console.error(`error: hit a snag on \`${component}\``);
+      console.error('where i was:');
+      inspect(current, 'error');
+
+      process.exit(1);
+    }
+    current = current[component];
+  }
+  return current;
+}
+
+function stdin() {
+  return new Promise((resolve, _reject) => {
+    let data = '';
+
+    process.stdin.on('data', (chunk) => {
+      data += chunk;
+    });
+    process.stdin.on('end', () => resolve(data));
+  });
+}
+
+async function consume() {
+  let text;
+  if (sourceFile == null) {
+    text = await stdin();
+  } else {
+    text = await readFile(sourceFile);
+  }
+
+  const parsed = JSON.parse(text);
+  const result = access(parsed, accessor);
+
+  inspect(result);
+}
+
+consume().catch((error) => {
+  throw error;
+});
