@@ -4,6 +4,8 @@ a tiny utility for working with json from stdin
 
 ## installation
 
+requires node 8+.
+
 ```sh
 $ npm i -g @slicey/json
 ```
